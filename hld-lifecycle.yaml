@@ -87,3 +87,4 @@ steps:
       APP_REPO_URL: $(Build.Repository.Uri)
       AZURE_DEVOPS_EXT_PAT: $(PAT)
       REPO: $(HLD_REPO)
+      GITHUB_TOKEN: $(PAT)

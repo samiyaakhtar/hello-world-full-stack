@@ -6,7 +6,8 @@ trigger:
   paths:
     include:
       - bedrock.yaml
-variables: []
+variables:
+  - group: helloworld-vg
 pool:
   vmImage: ubuntu-latest
 steps:

@@ -160,3 +160,4 @@ stages:
               ACCESS_TOKEN_SECRET: $(PAT)
               AZURE_DEVOPS_EXT_PAT: $(PAT)
               REPO: $(HLD_REPO)
+              GITHUB_TOKEN: $(PAT)

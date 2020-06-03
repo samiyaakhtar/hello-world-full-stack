@@ -128,12 +128,19 @@ stages:
               git_push
 
               # Open PR via az repo cli
-              echo 'az extension add --name azure-devops'
-              az extension add --name azure-devops
+              # echo 'az extension add --name azure-devops'
+              # az extension add --name azure-devops
 
-              echo 'az repos pr create --description "Updating $SERVICE_NAME_LOWER to $(echo $(Build.SourceBranchName) | tr / - | tr . - | tr _ - )-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)"'
-              response=$(az repos pr create --description "Updating $SERVICE_NAME_LOWER to $(echo $(Build.SourceBranchName) | tr / - | tr . - | tr _ - )-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)")
-              pr_id=$(echo $response | jq -r '.pullRequestId')
+              # echo 'az repos pr create --description "Updating $SERVICE_NAME_LOWER to $(echo $(Build.SourceBranchName) | tr / - | tr . - | tr _ - )-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)"'
+              # response=$(az repos pr create --description "Updating $SERVICE_NAME_LOWER to $(echo $(Build.SourceBranchName) | tr / - | tr . - | tr _ - )-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)")
+              # pr_id=$(echo $response | jq -r '.pullRequestId')
+
+              # Open a PR via hub cli 
+              curl -fsSL https://github.com/github/hub/raw/master/script/get | bash -s 2.14.1
+              echo "bin/hub pull-request -p -m Updating $SERVICE_NAME_LOWER to $(echo $(Build.SourceBranchName) | tr / - | tr . - | tr _ - )-$(Build.BuildNumber). PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)"
+              response=$(bin/hub pull-request -p -m "Updating $SERVICE_NAME_LOWER to $(echo $(Build.SourceBranchName) | tr / - | tr . - | tr _ - )-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)")
+              pr_id=$(echo ${response##*/})
+              # pr_id=$(echo $response | jq -r '.pullRequestId')
 
               # Update introspection storage with this information, if applicable
               if [ -z "$(INTROSPECTION_ACCOUNT_NAME)" -o -z "$(INTROSPECTION_ACCOUNT_KEY)" -o -z "$(INTROSPECTION_TABLE_NAME)" -o -z "$(INTROSPECTION_PARTITION_KEY)" ]; then

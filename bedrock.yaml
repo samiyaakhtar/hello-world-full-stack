@@ -1,0 +1,37 @@
+rings:
+  master:
+    isDefault: true
+services:
+  - displayName: backend
+    path: ./api
+    helm:
+      chart:
+        accessTokenVariable: ACCESS_TOKEN_SECRET
+        branch: ''
+        git: ''
+        path: ''
+    k8sBackend: ''
+    k8sBackendPort: 80
+    middlewares: []
+    pathPrefix: ''
+    pathPrefixMajorVersion: ''
+    serviceBuildVg: []
+    serviceBuildVariables: []
+  - displayName: frontend
+    path: ./client
+    helm:
+      chart:
+        accessTokenVariable: ACCESS_TOKEN_SECRET
+        branch: ''
+        git: ''
+        path: ''
+    k8sBackend: ''
+    k8sBackendPort: 80
+    middlewares: []
+    pathPrefix: ''
+    pathPrefixMajorVersion: ''
+    serviceBuildVg: []
+    serviceBuildVariables: []
+version: 0.6.5
+variableGroups:
+  - helloworld-vg

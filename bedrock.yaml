@@ -9,7 +9,7 @@ services:
         accessTokenVariable: ACCESS_TOKEN_SECRET
         branch: master
         git: "https://github.com/samiyaakhtar/hello-world-full-stack"
-        path: chart
+        path: api/chart
     k8sBackend: ""
     k8sBackendPort: 80
     middlewares: []
@@ -24,7 +24,7 @@ services:
         accessTokenVariable: ACCESS_TOKEN_SECRET
         branch: master
         git: "https://github.com/samiyaakhtar/hello-world-full-stack"
-        path: chart
+        path: client/chart
     k8sBackend: ""
     k8sBackendPort: 80
     middlewares: []

@@ -7,14 +7,14 @@ services:
     helm:
       chart:
         accessTokenVariable: ACCESS_TOKEN_SECRET
-        branch: ''
-        git: ''
-        path: ''
-    k8sBackend: ''
+        branch: master
+        git: "https://github.com/samiyaakhtar/hello-world-full-stack"
+        path: chart
+    k8sBackend: ""
     k8sBackendPort: 80
     middlewares: []
-    pathPrefix: ''
-    pathPrefixMajorVersion: ''
+    pathPrefix: ""
+    pathPrefixMajorVersion: ""
     serviceBuildVg: []
     serviceBuildVariables: []
   - displayName: frontend
@@ -22,14 +22,14 @@ services:
     helm:
       chart:
         accessTokenVariable: ACCESS_TOKEN_SECRET
-        branch: ''
-        git: ''
-        path: ''
-    k8sBackend: ''
+        branch: master
+        git: "https://github.com/samiyaakhtar/hello-world-full-stack"
+        path: chart
+    k8sBackend: ""
     k8sBackendPort: 80
     middlewares: []
-    pathPrefix: ''
-    pathPrefixMajorVersion: ''
+    pathPrefix: ""
+    pathPrefixMajorVersion: ""
     serviceBuildVg: []
     serviceBuildVariables: []
 version: 0.6.5

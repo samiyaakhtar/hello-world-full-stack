@@ -1,0 +1,3 @@
+description: Simple Helm Chart For Integration Tests
+name: hellobedrock.acme.frontend-app
+version: 0.1.0

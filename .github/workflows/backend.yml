@@ -179,7 +179,7 @@ jobs:
           tar -xvf hub-linux-amd64-2.12.3.tgz
 
           # hardcoded
-          cd fabrikate-spartan-cluster 
+          cd ${REPO##*/}
           echo "Attempting to PR"
           export GITHUB_TOKEN=$ACCESS_TOKEN_SECRET
           prResult=$(../hub-linux-amd64-2.12.3/bin/hub pull-request -p -m "Automated PR for $GITHUB_REPOSITORY")

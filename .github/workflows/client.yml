@@ -1,0 +1,218 @@
+name: Build_Test_Push
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "client"
+      - "!api"
+  pull_request:
+    branches: [master]
+
+env:
+  INTROSPECTION_ACCOUNT_KEY: ${{ secrets.INTROSPECTION_ACCOUNT_KEY }}
+  # REPO: ${{ secrets.INTROSPECTION_ACCOUNT_KEY }}
+  ACCESS_TOKEN_SECRET: ${{ secrets.HLD_REPO_SECRET }}
+  REPO: https://github.com/samiyaakhtar/hello-world-full-stack-hld
+  APP_NAME: spartan-app
+  DOCKER_REPO: andrebriggs
+  INTROSPECTION_ACCOUNT_NAME: abrigspksetup
+  INTROSPECTION_PARTITION_KEY: samiya-github-actions-prototype
+  INTROSPECTION_TABLE_NAME: spektatetable
+  FAB_SERVICE_NAME: frontend
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set current date as env variable
+        run: |
+          echo "::set-env name=NOW::$(date +'%Y%m%d')"
+          echo "::set-env name=IMAGE_TAG_NAME::$GITHUB_REPOSITORY:$(date +'%Y%m%d').$GITHUB_RUN_NUMBER"
+      - name: Debug Env Vars
+        run: |
+          echo "IMAGE_TAG_NAME: $IMAGE_TAG_NAME"
+          echo "Concat IMAGE_TAG_NAME: $GITHUB_REPOSITORY:$NOW.$GITHUB_RUN_NUMBER"
+          echo "GITHUB_RUN_ID: $GITHUB_RUN_ID"
+          echo "GITHUB_RUN_NUMBER: $GITHUB_RUN_NUMBER"
+          echo "GITHUB_ACTOR: $GITHUB_ACTOR"
+          echo "GITHUB_WORKFLOW: $GITHUB_WORKFLOW"
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME"
+          echo "GITHUB_EVENT_PATH: $GITHUB_EVENT_PATH"
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.15
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Get dependencies
+        run: |
+          go get -v -t -d ./...
+          go get -u golang.org/x/lint/golint
+          if [ -f Gopkg.toml ]; then
+              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+              dep ensure
+          fi
+      # - name: Build
+      #   run: go build -v .
+
+      - name: Test
+        run: |
+          go test -v -coverprofile spartan.out . 
+          go tool cover -html=spartan.out
+      - name: Run vet & lint
+        run: |
+          go vet .
+          golint .
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # - name: Get Run Id
+      #   uses: octokit/request-action@v2.x
+      #   id: get_jobs
+      #   with:
+      #     route: GET /repos/:repository/actions/runs/:run_id/jobs
+      #     repository: ${{ github.repository }}
+      #     run_id: $GITHUB_RUN_ID
+      #   env:
+      #     GITHUB_TOKEN: $ACCESS_TOKEN_SECRET
+      # - run: "echo latest release: ${{ steps.get_jobs.outputs.data }}"
+
+      # hard coding jobname
+      - name: Get and Set Job Run Id
+        run: |
+          result=$(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs)
+          job_name=Build
+          job_run_id=$(echo "$result"  | jq -r --arg job_name "$job_name" '.jobs[] | select(.name == $job_name) | .id')
+          echo "job_run_id: $job_run_id"
+          echo "::set-env name=JOB_RUN_ID::$job_run_id"
+
+        # env:
+        #   JOB_NAME: Build
+      - name: Update Spektate storage
+        run: |
+          set -e
+          chmod +x ./bedrock_helpers.sh
+          . ./bedrock_helpers.sh --source-only
+          get_bedrock_version
+          download_bedrock
+          commitId=$GITHUB_SHA
+          commitId=$(echo "${commitId:0:7}")
+          url=$(git remote --verbose | grep origin | grep fetch | cut -f2 | cut -d' ' -f1)
+          repourl=${url##*@}
+
+          echo "./bedrock/bedrock deployment create -n $INTROSPECTION_ACCOUNT_NAME -k $INTROSPECTION_ACCOUNT_KEY -t $INTROSPECTION_TABLE_NAME -p $INTROSPECTION_PARTITION_KEY --p1 $JOB_RUN_ID --image-tag $IMAGE_TAG_NAME --commit-id $commitId --service $APP_NAME --repository $repourl"
+          ./bedrock/bedrock deployment create -n $INTROSPECTION_ACCOUNT_NAME -k $INTROSPECTION_ACCOUNT_KEY -t $INTROSPECTION_TABLE_NAME -p $INTROSPECTION_PARTITION_KEY --p1 $JOB_RUN_ID --image-tag $IMAGE_TAG_NAME --commit-id $commitId --service $APP_NAME --repository $repourl
+
+      - name: Azure CLI script
+        uses: azure/CLI@v1
+        env:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+        with:
+          inlineScript: |
+            echo "az acr build -r $DOCKER_REPO --image $IMAGE_TAG_NAME ."
+            az acr build -r $DOCKER_REPO --image $IMAGE_TAG_NAME .
+  hld_update:
+    name: HLD Update
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set current date as env variable
+        run: |
+          echo "::set-env name=NOW::$(date +'%Y%m%d')"
+          echo "::set-env name=IMAGE_TAG_NAME::$GITHUB_REPOSITORY:$(date +'%Y%m%d').$GITHUB_RUN_NUMBER"
+          echo "::set-env name=BRANCH_NAME::DEPLOY/$APP_NAME-$(date +'%Y%m%d').$GITHUB_RUN_NUMBER"
+      # hard coding jobname
+      - name: Get and Set Job Run Id
+        run: |
+          result=$(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs)
+          job_name="HLD Update"
+          job_run_id=$(echo "$result"  | jq -r --arg job_name "$job_name" '.jobs[] | select(.name == $job_name) | .id')
+          echo "job_run_id: $job_run_id"
+          echo "::set-env name=JOB_RUN_ID::$job_run_id"
+
+        # env:
+        #   JOB_NAME: HLD Update
+      - name: Debug Env Vars
+        run: |
+          echo "IMAGE_TAG_NAME: $IMAGE_TAG_NAME"
+          echo "Concat IMAGE_TAG_NAME: $GITHUB_REPOSITORY:$NOW.$GITHUB_RUN_NUMBER"
+          echo "GITHUB_RUN_ID: $GITHUB_RUN_ID"
+          echo "GITHUB_RUN_NUMBER: $GITHUB_RUN_NUMBER"
+          echo "GITHUB_ACTOR: $GITHUB_ACTOR"
+          echo "GITHUB_WORKFLOW: $GITHUB_WORKFLOW"
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME"
+          echo "GITHUB_EVENT_PATH: $GITHUB_EVENT_PATH"
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      # Fabrikate release version doesn't support Helm3 yet.
+      - uses: azure/setup-helm@v1
+        with:
+          version: v2.16.3
+        id: install
+
+      - name: Download Fab, Update HLD, Push changes, Open PR, and if configured, push to Spektate storage
+        run: |
+          set -e
+          chmod +x ./bedrock_helpers.sh
+          . ./bedrock_helpers.sh --source-only
+          # Initialization
+          verify_access_token
+          init
+          helm_init
+          # Fabrikate
+          get_fab_version
+          download_fab
+          # Clone HLD repo
+          git_connect
+          # --- End Script
+          # Update HLD
+          git checkout -b "$BRANCH_NAME"
+          export IMAGE_TAG=$(echo $(date +'%Y%m%d').$GITHUB_RUN_NUMBER)
+          echo "Image Tag: $IMAGE_TAG"
+          export IMAGE_REPO=$(echo $DOCKER_REPO.azurecr.io/$GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]')
+          echo "Image Repository: $IMAGE_REPO"
+          ls -la
+          echo "FAB SET"
+          fab set --subcomponent $FAB_SERVICE_NAME image.tag=$IMAGE_TAG image.repository=$IMAGE_REPO
+          # Set git identity
+          git config user.email "admin@azuredevops.com"
+          git config user.name "Automated Account"
+          # Commit changes
+          echo "GIT ADD and COMMIT -- Will throw error if there is nothing to commit."
+          git_commit_if_changes "Updating $FAB_SERVICE_NAME image tag to $IMAGE_TAG." 1 unusedVar
+
+          # Git Push
+          git_push
+          cd ..
+          wget https://github.com/github/hub/releases/download/v2.12.3/hub-linux-amd64-2.12.3.tgz
+          tar -xvf hub-linux-amd64-2.12.3.tgz
+
+          # hardcoded
+          cd fabrikate-spartan-cluster 
+          echo "Attempting to PR"
+          export GITHUB_TOKEN=$ACCESS_TOKEN_SECRET
+          prResult=$(../hub-linux-amd64-2.12.3/bin/hub pull-request -p -m "Automated PR for $GITHUB_REPOSITORY")
+          pr_id="${prResult##*/}"
+          # Update introspection storage with this information, if applicable
+          if [ -z "$INTROSPECTION_ACCOUNT_NAME" -o -z "$INTROSPECTION_ACCOUNT_KEY" -o -z "$INTROSPECTION_TABLE_NAME" -o -z "$INTROSPECTION_PARTITION_KEY" ]; then
+          echo "Introspection variables are not defined. Skipping..."
+          else
+          latest_commit=$(git rev-parse --short HEAD)
+          url=$(git remote --verbose | grep origin | grep fetch | cut -f2 | cut -d' ' -f1)
+          repourl=${url##*@}
+          branchName="${GITHUB_REF##*/}"
+          get_bedrock_version
+          download_bedrock
+          ./bedrock/bedrock deployment create  -n $INTROSPECTION_ACCOUNT_NAME -k $INTROSPECTION_ACCOUNT_KEY -t $INTROSPECTION_TABLE_NAME -p $INTROSPECTION_PARTITION_KEY --p2 $JOB_RUN_ID --hld-commit-id $latest_commit --env $branchName --image-tag $IMAGE_TAG_NAME --pr $pr_id --repository $repourl
+          fi

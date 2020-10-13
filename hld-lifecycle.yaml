@@ -7,7 +7,7 @@ trigger:
     include:
       - bedrock.yaml
 variables:
-  - group: helloworld-vg
+  - group: helloworld-azdo-vg
 pool:
   vmImage: ubuntu-latest
 steps:
@@ -67,21 +67,13 @@ steps:
       git_push
 
       # Open PR via az repo cli
-      # echo 'az extension add --name azure-devops'
-      # az extension add --name azure-devops
+      echo 'az extension add --name azure-devops'
+      az extension add --name azure-devops
 
-      # echo 'az repos pr create --description "Reconciling HLD with $(Build.Repository.Name)-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)"'
-      # az repos pr create --description "Reconciling HLD with $(Build.Repository.Name)-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)"
+      echo 'az repos pr create --description "Reconciling HLD with $(Build.Repository.Name)-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)"'
+      az repos pr create --description "Reconciling HLD with $(Build.Repository.Name)-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)"
 
-
-      # Open a PR via hub cli 
-      curl -fsSL https://github.com/github/hub/raw/master/script/get | bash -s 2.14.1
-      echo "bin/hub pull-request -p -m Updating $SERVICE_NAME_LOWER to $(echo $(Build.SourceBranchName) | tr / - | tr . - | tr _ - )-$(Build.BuildNumber). PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)"
-      response=$(bin/hub pull-request -p -m "Reconciling HLD with $(Build.Repository.Name)-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)")
-      pr_id=$(echo ${response##*/})
-      # pr_id=$(echo $response | jq -r '.pullRequestId')
-
-    displayName: 'Download Fabrikate and BEDROCK, Update HLD, Push changes, Open PR'
+    displayName: "Download Fabrikate and BEDROCK, Update HLD, Push changes, Open PR"
     env:
       ACCESS_TOKEN_SECRET: $(PAT)
       APP_REPO_URL: $(Build.Repository.Uri)

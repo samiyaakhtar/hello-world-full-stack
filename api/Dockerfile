@@ -4,10 +4,14 @@ RUN mkdir -p /usr/src/app
 
 WORKDIR /usr/src/app
 
-COPY . .
+COPY package.json ./
+COPY yarn.lock ./
 
-RUN npm install
+RUN yarn
 
-EXPOSE 3000
+COPY . /usr/src/app
+COPY bin /usr/src/app/bin
 
-CMD ["npm", "run", "start"]
+EXPOSE 9000
+
+CMD ["yarn", "start"]

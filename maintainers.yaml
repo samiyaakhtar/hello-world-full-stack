@@ -1,5 +1,5 @@
 services:
   ./:
     maintainers:
-      - email: samiyaakhtar7@gmail.com
+      - email: saakhta@microsoft.com
         name: Samiya Akhtar

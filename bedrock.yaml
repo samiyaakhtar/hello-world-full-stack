@@ -1,15 +1,17 @@
 rings:
   master:
     isDefault: true
+  dev: {}
+  securitybugfix: {}
 services:
   - displayName: backend
     path: ./api
     helm:
       chart:
         accessTokenVariable: ACCESS_TOKEN_SECRET
-        branch: master
-        git: "https://github.com/samiyaakhtar/hello-world-full-stack"
+        git: "https://dev.azure.com/epicstuff/hellobedrock/_git/hello-world-full-stack"
         path: api/chart
+        branch: master
     k8sBackend: ""
     k8sBackendPort: 80
     middlewares: []
@@ -22,9 +24,9 @@ services:
     helm:
       chart:
         accessTokenVariable: ACCESS_TOKEN_SECRET
-        branch: master
-        git: "https://github.com/samiyaakhtar/hello-world-full-stack"
+        git: "https://dev.azure.com/epicstuff/hellobedrock/_git/hello-world-full-stack"
         path: client/chart
+        branch: master
     k8sBackend: ""
     k8sBackendPort: 80
     middlewares: []
@@ -34,4 +36,4 @@ services:
     serviceBuildVariables: []
 version: 0.6.5
 variableGroups:
-  - helloworld-vg
+  - helloworld-azdo-vg

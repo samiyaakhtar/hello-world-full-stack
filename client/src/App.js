@@ -1,17 +1,24 @@
 import React, { Component } from "react";
 import logo from "./logo.svg";
 import "./App.css";
+import Trivia from "./Trivia";
+
+const backendURL = process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL : window.ENV.REACT_APP_BACKEND_URL;
 
 class App extends Component {
     constructor(props) {
         super(props);
-        this.state = { apiResponse: "" };
+        this.state = { questions: [] };
     }
 
     callAPI() {
-        fetch("http://localhost:9000/testAPI")
+        console.log(backendURL);
+        fetch(backendURL + "/trivia")
             .then(res => res.text())
-            .then(res => this.setState({ apiResponse: res }))
+            .then(res => {
+                let questions = JSON.parse(res);
+                this.setState({ questions: questions });
+            })
             .catch(err => err);
     }
 
@@ -24,9 +31,10 @@ class App extends Component {
             <div className="App">
                 <header className="App-header">
                     <img src={logo} className="App-logo" alt="logo" />
-                    <h1 className="App-title">Welcome to React</h1>
+                    <h1 className="App-title">Welcome to Simple Trivia</h1>
                 </header>
-                <p className="App-intro">{this.state.apiResponse}</p>
+                {/* <p className="App-intro">{this.state.apiResponse}</p> */}
+                <Trivia questions={this.state.questions} />
             </div>
         );
     }

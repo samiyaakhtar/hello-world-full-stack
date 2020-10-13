@@ -3,13 +3,22 @@ trigger:
   branches:
     include:
       - master
+      - dev
+      - securitybugfix
   paths:
     include:
       - client
     exclude:
       - bedrock.yaml
+schedules:
+  - cron: 0 0 * * *
+    displayName: Daily midnight build
+    branches:
+      include:
+        - dev
+    always: true
 variables:
-  - group: helloworld-vg
+  - group: helloworld-azdo-vg
 stages:
   - stage: build
     jobs:
@@ -46,8 +55,8 @@ stages:
               url=$(git remote --verbose | grep origin | grep fetch | cut -f2 | cut -d' ' -f1)
               repourl=${url##*@}
               ./bedrock/bedrock deployment create -n $(INTROSPECTION_ACCOUNT_NAME) -k $(INTROSPECTION_ACCOUNT_KEY) -t $(INTROSPECTION_TABLE_NAME) -p $(INTROSPECTION_PARTITION_KEY) --p1 $(Build.BuildId) --image-tag $tag_name --commit-id $commitId --service $service --repository $repourl
-            displayName: 'If configured, update Spektate storage with build pipeline'
-            condition: 'and(ne(variables[''INTROSPECTION_ACCOUNT_NAME''], ''''), ne(variables[''INTROSPECTION_ACCOUNT_KEY''], ''''),ne(variables[''INTROSPECTION_TABLE_NAME''], ''''),ne(variables[''INTROSPECTION_PARTITION_KEY''], ''''))'
+            displayName: "If configured, update Spektate storage with build pipeline"
+            condition: "and(ne(variables['INTROSPECTION_ACCOUNT_NAME'], ''), ne(variables['INTROSPECTION_ACCOUNT_KEY'], ''),ne(variables['INTROSPECTION_TABLE_NAME'], ''),ne(variables['INTROSPECTION_PARTITION_KEY'], ''))"
           - script: |-
               set -e
               export BUILD_REPO_NAME=$(echo $(Build.Repository.Name)-frontend | tr '[:upper:]' '[:lower:]')
@@ -128,19 +137,12 @@ stages:
               git_push
 
               # Open PR via az repo cli
-              # echo 'az extension add --name azure-devops'
-              # az extension add --name azure-devops
+              echo 'az extension add --name azure-devops'
+              az extension add --name azure-devops
 
-              # echo 'az repos pr create --description "Updating $SERVICE_NAME_LOWER to $(echo $(Build.SourceBranchName) | tr / - | tr . - | tr _ - )-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)"'
-              # response=$(az repos pr create --description "Updating $SERVICE_NAME_LOWER to $(echo $(Build.SourceBranchName) | tr / - | tr . - | tr _ - )-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)")
-              # pr_id=$(echo $response | jq -r '.pullRequestId')
-
-              # Open a PR via hub cli 
-              curl -fsSL https://github.com/github/hub/raw/master/script/get | bash -s 2.14.1
-              echo "bin/hub pull-request -p -m Updating $SERVICE_NAME_LOWER to $(echo $(Build.SourceBranchName) | tr / - | tr . - | tr _ - )-$(Build.BuildNumber). PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)"
-              response=$(bin/hub pull-request -p -m "Updating $SERVICE_NAME_LOWER to $(echo $(Build.SourceBranchName) | tr / - | tr . - | tr _ - )-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)")
-              pr_id=$(echo ${response##*/})
-              # pr_id=$(echo $response | jq -r '.pullRequestId')
+              echo 'az repos pr create --description "Updating $SERVICE_NAME_LOWER to $(echo $(Build.SourceBranchName) | tr / - | tr . - | tr _ - )-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)"'
+              response=$(az repos pr create --description "Updating $SERVICE_NAME_LOWER to $(echo $(Build.SourceBranchName) | tr / - | tr . - | tr _ - )-$(Build.BuildNumber)." "PR created by: $(Build.DefinitionName) with buildId: $(Build.BuildId) and buildNumber: $(Build.BuildNumber)")
+              pr_id=$(echo $response | jq -r '.pullRequestId')
 
               # Update introspection storage with this information, if applicable
               if [ -z "$(INTROSPECTION_ACCOUNT_NAME)" -o -z "$(INTROSPECTION_ACCOUNT_KEY)" -o -z "$(INTROSPECTION_TABLE_NAME)" -o -z "$(INTROSPECTION_PARTITION_KEY)" ]; then

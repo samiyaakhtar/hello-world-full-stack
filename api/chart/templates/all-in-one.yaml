@@ -1,47 +1,43 @@
 ---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{.Values.serviceName}}
 spec:
-  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ .Chart.Name }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
-  minReadySeconds: {{ .Values.minReadySeconds }}
-  strategy:
-    type: RollingUpdate # describe how we do rolling updates
-    rollingUpdate:
-      maxUnavailable: 1 # When updating take one pod down at a time
-      maxSurge: 1 # When updating never have more than one extra pod. If replicas = 2 then never 3 pods when updating
+      app: {{.Values.serviceName}}
+      tier: backend
+      track: stable
+  replicas: {{ .Values.replicaCount }}
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}
-        app.kubernetes.io/name: {{ .Chart.Name }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-      annotations:
-        prometheus.io/port: {{ .Values.service.containerPort}}
-        prometheus.io/scrape: true
+        app: {{.Values.serviceName}}
+        tier: backend
+        track: stable
     spec:
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{.Values.serviceName}}
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.service.containerPort }}
+            - name: http
+              containerPort: 9000
 ---
+
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{.Values.serviceName}}
   labels:
-    app: {{ .Chart.Name }}
+    app: {{.Values.serviceName}}
 spec:
   type: LoadBalancer
   ports:
-    - port: 8080
+    - port: 80
       name: http
+      targetPort: 9000
   selector:
-    app: {{ .Chart.Name }}
+    app: {{.Values.serviceName}}

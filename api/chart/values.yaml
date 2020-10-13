@@ -2,6 +2,9 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+serviceName: hello-world-full-stack-api
+deploymentName: default
+
 image:
   repository: hellorings.azurecr.io/hellobedrock.acme.backend
   tag: latest

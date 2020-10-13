@@ -13,7 +13,7 @@ env:
   # REPO: ${{ secrets.INTROSPECTION_ACCOUNT_KEY }}
   ACCESS_TOKEN_SECRET: ${{ secrets.HLD_REPO_SECRET }}
   REPO: https://github.com/samiyaakhtar/hello-world-full-stack-hld
-  APP_NAME: spartan-app
+  APP_NAME: backend
   DOCKER_REPO: andrebriggs
   INTROSPECTION_ACCOUNT_NAME: abrigspksetup
   INTROSPECTION_PARTITION_KEY: samiya-github-actions-prototype

@@ -24,9 +24,6 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./client
     steps:
       - name: Set current date as env variable
         run: |
@@ -100,6 +97,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
         with:
           inlineScript: |
+            cd client
             echo "az acr build -r $DOCKER_REPO --image $IMAGE_TAG_NAME ."
             az acr build -r $DOCKER_REPO --image $IMAGE_TAG_NAME .
   hld_update:

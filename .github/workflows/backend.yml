@@ -24,11 +24,14 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./client
     steps:
       - name: Set current date as env variable
         run: |
           echo "::set-env name=NOW::$(date +'%Y%m%d')"
-          echo "::set-env name=IMAGE_TAG_NAME::$GITHUB_REPOSITORY:$(date +'%Y%m%d').$GITHUB_RUN_NUMBER"
+          echo "::set-env name=IMAGE_TAG_NAME::$GITHUB_REPOSITORY-$FAB_SERVICE_NAME:$(date +'%Y%m%d').$GITHUB_RUN_NUMBER"
       - name: Debug Env Vars
         run: |
           echo "IMAGE_TAG_NAME: $IMAGE_TAG_NAME"

@@ -77,6 +77,7 @@ jobs:
         # env:
         #   JOB_NAME: Build
       - name: Update Spektate storage
+        if: github.event_name != 'pull_request'
         run: |
           set -e
           chmod +x ./bedrock_helpers.sh
@@ -104,6 +105,7 @@ jobs:
     name: HLD Update
     needs: build
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
     steps:
       - name: Set current date as env variable
         run: |

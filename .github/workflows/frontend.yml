@@ -2,11 +2,11 @@ name: Client_build_Test_Push
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
     paths:
       - "client"
   pull_request:
-    branches: [master]
 
 env:
   INTROSPECTION_ACCOUNT_KEY: ${{ secrets.INTROSPECTION_ACCOUNT_KEY }}
@@ -54,18 +54,6 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # - name: Get Run Id
-      #   uses: octokit/request-action@v2.x
-      #   id: get_jobs
-      #   with:
-      #     route: GET /repos/:repository/actions/runs/:run_id/jobs
-      #     repository: ${{ github.repository }}
-      #     run_id: $GITHUB_RUN_ID
-      #   env:
-      #     GITHUB_TOKEN: $ACCESS_TOKEN_SECRET
-      # - run: "echo latest release: ${{ steps.get_jobs.outputs.data }}"
-
-      # hard coding jobname
       - name: Get and Set Job Run Id
         run: |
           result=$(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs)
@@ -74,9 +62,8 @@ jobs:
           echo "job_run_id: $job_run_id"
           echo "::set-env name=JOB_RUN_ID::$job_run_id"
 
-        # env:
-        #   JOB_NAME: Build
       - name: Update Spektate storage
+        if: github.event_name != 'pull_request'
         run: |
           set -e
           chmod +x ./bedrock_helpers.sh
@@ -104,6 +91,7 @@ jobs:
     name: HLD Update
     needs: build
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
     steps:
       - name: Set current date as env variable
         run: |
@@ -160,7 +148,7 @@ jobs:
           git checkout -b "$BRANCH_NAME"
           export IMAGE_TAG=$(echo $(date +'%Y%m%d').$GITHUB_RUN_NUMBER)
           echo "Image Tag: $IMAGE_TAG"
-          export IMAGE_REPO=$(echo $DOCKER_REPO.azurecr.io/$GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]')
+          export IMAGE_REPO=$(echo $DOCKER_REPO.azurecr.io/$GITHUB_REPOSITORY-$FAB_SERVICE_NAME | tr '[:upper:]' '[:lower:]')
           echo "Image Repository: $IMAGE_REPO"
           ls -la
           echo "FAB SET"

@@ -2,11 +2,11 @@ name: API_build_Test_Push
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
     paths:
       - "api"
   pull_request:
-    branches: [master]
 
 env:
   INTROSPECTION_ACCOUNT_KEY: ${{ secrets.INTROSPECTION_ACCOUNT_KEY }}
@@ -160,7 +160,7 @@ jobs:
           git checkout -b "$BRANCH_NAME"
           export IMAGE_TAG=$(echo $(date +'%Y%m%d').$GITHUB_RUN_NUMBER)
           echo "Image Tag: $IMAGE_TAG"
-          export IMAGE_REPO=$(echo $DOCKER_REPO.azurecr.io/$GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]')
+          export IMAGE_REPO=$(echo $DOCKER_REPO.azurecr.io/$GITHUB_REPOSITORY-$FAB_SERVICE_NAME | tr '[:upper:]' '[:lower:]')
           echo "Image Repository: $IMAGE_REPO"
           ls -la
           echo "FAB SET"
